@@ -1,4 +1,4 @@
-.PHONY: all render register build run up compile reload down
+.PHONY: all render register build run up compile reload netsims down
 
 # Makefile for building, creating and cleaning
 # the NSO and CXTA containers for this development environment.
@@ -50,8 +50,16 @@ reload:
 	@echo "--- 🔀 Reloading the services ---"
 	./setup/packages-reload.sh
 
+# Target to create and onboard the netsim devices
+# in the NSO container
+netsims:
+	@echo "--- ⬇️ Loading preconfiguration files ---"
+	./setup/load-preconfigs.sh
+	@echo "--- 🛸 Loading netsims ---"
+	./setup/load-netsims.sh
+
 # Target to start Docker Compose services
-up: render register build run compile reload
+up: render register build run compile reload netsims
 
 # Target to stop Docker Compose services
 down:

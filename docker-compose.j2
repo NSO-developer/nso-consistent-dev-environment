@@ -9,6 +9,9 @@ services:
       - type: bind
         source: ./ncs/
         target: /nso/etc
+      - type: bind
+        source: ./preconfigs/
+        target: /tmp/nso
     environment:
       - EXTRA_ARGS=--with-package-reload-force
       - ADMIN_USERNAME=admin

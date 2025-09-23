@@ -18,3 +18,17 @@ skip-compilation:
   - cisco-ios-cli-6.109
   - cisco-asa-cli-6.18
   - cisco-nx-cli-5.27
+
+netsims:
+  cisco-iosxr-cli-7.69:
+    - asr9k-xr-7601
+    - ncs5k-xr-5702
+  cisco-ios-cli-6.109:
+    - router-ios-01
+    - switch-ios-01
+  cisco-asa-cli-6.18:
+    - asa-fw-01
+    - asa-virtual-02
+  cisco-nx-cli-5.27:
+    - nexus-9000-01
+    - nexus-7000-02

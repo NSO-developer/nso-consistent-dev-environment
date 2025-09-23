@@ -1,19 +1,27 @@
-<h1 align="center">🛠️📦 NSO Consistent Development Environment - <code>Use Case and Tooling</code>
+<h1 align="center">🛠️📦 NSO Consistent Development Environment<br /><br />
+<div align="center">
+<img src="doc-images/nso_consistent_env_logo.png" width="500"/>
+</div>
+
 <div align="center">
   <img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&labelColor=555555&logoColor=white" alt="Docker"/>
   <img src="https://img.shields.io/badge/Bash-Script-blue" alt="Bash"/>
   <img src="https://img.shields.io/badge/Cisco-1BA0D7?style=flat&logo=cisco&labelColor=555555&logoColor=white" alt="Cisco"/>
   <img src="https://img.shields.io/badge/Network-Tools-green" alt="Networking"/>
+  <a href="https://developer.cisco.com/codeexchange/github/repo/ponchotitlan/nso-consistent-dev-environment"><img src="https://static.production.devnetcloud.com/codeexchange/assets/images/devnet-published.svg" alt="DevNet"/></a>
 </div></h1>
 
 <div align="center">
 A series of tools and recommendations for building standardized, container-based Cisco NSO environments tailored for Network Automation development projects.<br /><br />
+<code>aka. Helping you, fellow NSO developer, to get started coding faster</code><br />
 </div>
 
 ## ✨ Overview
-`(Based on real-life experiences)`. You join a Network Automation project with Cisco NSO, eager to start coding services right away. But first, you need your own setup to get that code flowing. Suddenly, you find yourself losing days wrangling with scattered docs, mismatched libraries, broken sources, and confusing steps just to piece your environment together. Instead of automating, you’re stuck troubleshooting, chasing quick fixes, and asking colleagues what worked for them.
+**Based on real-life experiences**.
 
-With this in mind, this project collects a series of good practices and tooling to leverage the deployment of Cisco NSO development environment in a versionable and swift way.
+You join a Network Automation project with Cisco NSO, eager to start coding services right away. But first, **you need your own setup to get that code flowing**. Suddenly, you find yourself losing days wrangling with scattered docs, mismatched libraries, broken sources, and confusing steps just to piece your environment together. Instead of automating, you’re stuck troubleshooting, chasing quick fixes, and asking colleagues what worked for them.
+
+With this in mind, this project collects a series of good practices and tooling to leverage the deployment of a Cisco NSO development environment in a versionable and swift way.
 
 The following diagram shows the components of this project:
 
@@ -42,6 +50,7 @@ Without committing a new container image, the features of the official image are
 | `ncs/ncs.conf`*        | Custom ncs.conf for your NSO container. Mounted in `/nso/etc`       |
 | `packages/`           | Your versioned NSO packages. Mounted in `/nso/run/packages` |
 | `setup/`              | Bash scripts for template rendering and custom NSO image building        |
+| `preconfigs/`           | Your XML files with NSO pre-configurations (there is a xml for netsim authgroup now). Mounted in `/tmp/nso` |
 
 *About the included `ncs/ncs.conf` file: It contains the configurations to mount two directories for the `NSO packages`:
 * `/opt/ncs/packages` for the NEDs and artifacts in general
@@ -58,7 +67,7 @@ The `docker-compose.yml` defines two key services:
 *   **`my-cxta-dev`**:
     A CXTA container (`dockerhub.cisco.com/cxta-docker/cxta:latest`). It also mounts the `packages` directory for test automation.
 
-> The `cxta` docker image is not available for public use. It needs to be acquired via Cisco services.
+> 💡 The `cxta` docker image is not available for public use. It needs to be acquired via Cisco services.
 
 ## 🚀 Getting Started
 
@@ -68,7 +77,7 @@ Ensure you have the following installed:
 *   [Docker Compose](https://docs.docker.com/compose/install/)
 *   [Make](https://www.gnu.org/software/make/)
 
-> This project can only run in **Linux-based** environments. The project relies on `Makefile` targets for its operation, which are not compatible with Windows OS. 
+> 💡 This project can only run in **Linux-based** environments. The project relies on `Makefile` targets for its operation, which are not compatible with Windows OS. 
 
 ### 1. Clone this repository
 Issue the following command to clone this repository in your host computer or remote virtual machine intended to be your dev environment:
@@ -78,7 +87,7 @@ git clone https://github.com/ponchotitlan/nso-consistent-dev-environment.git
 ```
 
 ### 2. Download and install the official NSO Docker Image
-> For this demo, we will be using the NSO Production Docker Image for Free Trial. If you already have a commercial-use image installed in your development environment, you can skip [to this part of the guide]().
+> 💡 For this demo, we will be using the NSO Production Docker Image for Free Trial. If you already have a commercial-use image installed in your development environment, you can skip [to this part of the guide](https://github.com/ponchotitlan/nso-consistent-dev-environment/tree/main?tab=readme-ov-file#3-configure-requirementstxt).
 
 The official NSO Docker Image is not available in any public container repository. Therefore, it needs to be manually downloaded from the Cisco Software Central and installed in your environment.
 
@@ -96,13 +105,10 @@ Among the unpacked files, there should be a _.tar.gz_ file, which is the actual 
 docker load < nso-6.5.container-image-prod.linux._your_arch_.tar.gz
 ```
 
-The image should now be available in your environment. To verify, issue this command:
+✅ The image should now be available in your environment. To verify, issue this command:
 
 ```bash
-docker images | grep cisco-nso-prod
-```
-
-```bash
+% docker images | grep cisco-nso-prod
 cisco-nso-prod                                    6.5       799772f04d48   4 months ago   1.59GB
 ```
 
@@ -136,7 +142,11 @@ The artifacts you wish to download during the image build. The URLs must point t
 - `skip-compilation`
 The artifacts that don't need to be compiled during the onboarding process. Ideally, all artifacts come already compiled, however there might be the case that you need to compile any in the container image building process.
 
-> For this demo, we are using NEDs from the [Cisco Software Central - Crosswork Network Services Orchestrator Free Trial](https://software.cisco.com/download/home/286331591/type/286283941/release) already pre-loaded as releases in a public repository to emulate downloading from an Artifact Server.
+> 💡 For this demo, we are using NEDs from the [Cisco Software Central - Crosswork Network Services Orchestrator Free Trial](https://software.cisco.com/download/home/286331591/type/286283941/release) already pre-loaded as releases in a public repository to emulate downloading from an Artifact Server.
+
+#### Netsim fields
+- `netsims > NED_name > [netsims names]`
+The specification of the netsim devices that you need per NED. A netsim device will be created and named based on this yaml.
 
 ```yaml
 nso-base: cisco-nso-prod:6.5
@@ -159,6 +169,20 @@ skip-compilation:
   - cisco-ios-cli-6.109
   - cisco-asa-cli-6.18
   - cisco-nx-cli-5.27
+
+netsims:
+  cisco-iosxr-cli-7.69:
+    - asr9k-xr-7601
+    - ncs5k-xr-5702
+  cisco-ios-cli-6.109:
+    - router-ios-01
+    - switch-ios-01
+  cisco-asa-cli-6.18:
+    - asa-fw-01
+    - asa-virtual-02
+  cisco-nx-cli-5.27:
+    - nexus-9000-01
+    - nexus-7000-02
 ---
 ```
 
@@ -166,19 +190,21 @@ skip-compilation:
 
 The `Makefile` provides convenient commands to manage your custom NSO environment.
 
-| Target | Description |
+| Command | Description |
 |---|---|
-| `all` | Default target: builds and then brings up the services. |
-| `render` | Renders the templates in this repository (`.j2` files) with information from `config.yaml`. |
-| `register` | Mounts a local Docker registry on `localhost:5000` for your NSO container image, in case it comes from a clean `docker loads` and is not hosted in a registry. |
-| `build` | Builds the Docker image with secrets using Docker BuildKit for best security practices (secrets are not recorded in layer history). |
-| `run` | Runs the Docker Compose services with health checks, using a script to account for variable NSO container health-check times. |
-| `up` | Starts Docker Compose services, which includes rendering templates, registering the local registry, building the image, and running the services. |
-| `down` | Stops Docker Compose services. |
+| `make` 🌟 | Default target: builds and then starts all services using the `render`, `register`, `build`, `run`, `compile`, `reload` and `netsims` targets.  |
+| `make render` ✨ | Renders the templates `docker-compose.j2` and `Dockerfile.j2`. |
+| `make register` 📤 | Mounts a local Docker registry for the NSO container image if your NSO base image is not registered anywhere. |
+| `make build` 🏗️ | Builds the NSO custom Docker image with BuildKit secrets. |
+| `make run` 🚀 | Starts Docker Compose services with health checks. |
+| `make compile` 🛠️ | Compiles your services using the NSO container. |
+| `make reload` 🔀 | Reloads all the services by running the `packages reload` command in the NSO container CLI. |
+| `make netsims` 🛸 | Loads the preconfiguration files from the repository and creates/onboards the netsim devices. |
+| `make down` 🛑 | Stops Docker Compose services. |
 
 Example:
 
-> **All the following commands are equivalent to just running `make`.** They are described individually here for documentation purposes. If you want to run everything at once, just type `make` and that's it.
+> 💡 **All the following commands are equivalent to just running `make`.** They are described individually here for documentation purposes. If you want to run everything at once, just type `make` and that's it.
 
 ### 1. Rendering the templates
 ```bash
@@ -191,7 +217,7 @@ make render
 
 The files `docker-compose.yml` and `Dockerfile` were just created in the root directory of this repository with the information provided in the `config/yaml` file.
 
-> If your image is not hosted in a registry (it doesn't have a URL), the prefix `localhost:5000/` will be appended in all the rendered files
+> 💡 If your image is not hosted in a registry (it doesn't have a URL), the prefix `localhost:5000/` will be appended in all the rendered files
 
 ```bash
 ...
@@ -203,7 +229,7 @@ This step is necessary if you downloaded and onboarded the NSO free demo image i
 
 Nevertheless, if the image that you provided in the `config.yaml` file is already registered somewhere (aka. has a URL prefix), this step does nothing.
 
-> This step is needed if your image is not hosted in a registry becauce otherwise it wouldn't be possible to use it in a Dockerfile. By default, docker tries to append a URL if the image name doesn't have one.
+> 💡 This step is needed if your image is not hosted in a registry becauce otherwise it wouldn't be possible to use it in a Dockerfile. By default, docker tries to append a URL if the image name doesn't have one.
 
 ```bash
 make register
@@ -221,7 +247,7 @@ make register
 --- 📤 Image pushed to local registry successfully. ---
 ```
 
-Just to verify, the following command shows the active local registry container:
+✅ Just to verify, the following command shows the active local registry container:
 
 ```bash
 % docker ps | grep registry
@@ -245,14 +271,14 @@ The credentials are stored in a safe file (which will later be deleted) and moun
 
 Your artifacts are downloaded and extracted in `opt/ncs/packages`. Your image is ready to be used!
 
-To verify, use the following command with the name provided in the `config.yaml` file:
+✅ To verify, use the following command with the name provided in the `config.yaml` file:
 
 ```bash
 % docker images | grep my-nso-custom-dev
 my-nso-custom-dev                      latest    f868374843d7   2 minutes ago   1.79GB
 ```
 
-> Note that if you create containers based on this image, it will not download anything unless the list in `config.yaml` changes. This saves plenty of time and effort when spinning up new containers.
+> 💡 Note that if you create containers based on this image, it will not download anything unless the list in `config.yaml` changes. This saves plenty of time and effort when spinning up new containers.
 
 ### 4. Running your Docker Compose services
 ```bash
@@ -316,38 +342,74 @@ reload-result {
     package resource-manager
     result true
 }
-reload-result {
-    package cisco-asa-cli-6.18
-    result true
-}
-reload-result {
-    package cisco-ios-cli-6.109
-    result true
-}
-reload-result {
-    package cisco-iosxr-cli-7.69
-    result true
-}
-reload-result {
-    package cisco-nx-cli-5.27
-    result true
-}
-reload-result {
-    package demo-rfs
-    result true
-}
-reload-result {
-    package resource-manager
-    result true
-}
 ```
+
+```bash
+make netsims
+```
+
+```bash
+--- ⬇️ Loading preconfiguration files ---
+...
+[⬇️] Loading done!
+--- 🛸 Loading netsims ---
+...
+DEVICE dummy0 OK STARTED
+DEVICE asr9k-xr-7601 OK STARTED
+DEVICE ncs5k-xr-5702 OK STARTED
+DEVICE router-ios-01 OK STARTED
+DEVICE switch-ios-01 OK STARTED
+DEVICE asa-fw-01 OK STARTED
+DEVICE asa-virtual-02 OK STARTED
+DEVICE nexus-9000-01 OK STARTED
+DEVICE nexus-7000-02 OK STARTED
+...
+sync-result {
+    device asa-fw-01
+    result true
+}
+sync-result {
+    device asa-virtual-02
+    result true
+}
+sync-result {
+    device asr9k-xr-7601
+    result true
+}
+sync-result {
+    device dummy0
+    result true
+}
+sync-result {
+    device ncs5k-xr-5702
+    result true
+}
+sync-result {
+    device nexus-7000-02
+    result true
+}
+sync-result {
+    device nexus-9000-01
+    result true
+}
+sync-result {
+    device router-ios-01
+    result true
+}
+sync-result {
+    device switch-ios-01
+    result true
+}
+[🛸] Loading done!
+```
+
+Your netsim devices specified in the `config.yaml` file are created, started, onboarded in the NSO container, and synced.
 
 **✅ Your environment is ready for use!** You can verify your containers with the following command:
 
-`docker ps`
-
 ```bash
 % docker ps
+
 CONTAINER ID   IMAGE                                         COMMAND                  CREATED        STATUS                    PORTS                                            NAMES
 a5ee6114e149   my-nso-custom-dev                             "/run-nso.sh"            17 hours ago   Up 11 minutes (healthy)   0.0.0.0:2022->2022/tcp, 0.0.0.0:8080->8080/tcp   my-nso-dev
 76f4de91d18c   dockerhub.cisco.com/cxta-docker/cxta:latest   "/docker-entrypoint.…"   17 hours ago   Up 12 minutes                                                              my-cxta-dev
@@ -358,6 +420,7 @@ f8f892c7cd3b   registry:2                                    "/entrypoint.sh /et
 
 ```bash
 % docker exec my-nso-dev /bin/bash -c "echo 'show packages package * oper-status | tab' | ncs_cli -Cu admin"
+
                                                                                                         PACKAGE                          
                           PROGRAM                                                                       META     FILE                    
                           CODE     JAVA           PYTHON         BAD NCS  PACKAGE  PACKAGE  CIRCULAR    DATA     LOAD   ERROR            
@@ -374,7 +437,8 @@ resource-manager      X   -        -              -              -        -     
 ✅ Your artifacts and NEDs are in a different location:
 
 ```bash
-% docker exec my-nso-dev /bin/bash -c "ls -lh /opt/ncs/packages"                                            
+% docker exec my-nso-dev /bin/bash -c "ls -lh /opt/ncs/packages"  
+
 total 20K
 drwxr-xr-x  8 9001 users 4.0K May 15 09:00 cisco-asa-cli-6.18
 drwxr-xr-x  8 9001 users 4.0K May  8 12:20 cisco-ios-cli-6.109
@@ -386,8 +450,26 @@ drwxr-xr-x 11 root root  4.0K Sep  8 15:42 resource-manager
 ✅ Your services under development are in this mounted volume, mapped to your repository:
 ```bash
 % docker exec my-nso-dev /bin/bash -c "ls -lh /nso/run/packages"
+
 total 0
 drwxr-xr-x 8 nso root 256 Sep  2 15:44 demo-rfs
+```
+
+✅ Finally, your netsim devices are onboarded and synced:
+```bash
+% docker exec my-nso-dev /bin/bash -c "echo 'show devices list' | ncs_cli -Cu admin"
+
+NAME            ADDRESS    DESCRIPTION  NED ID                ADMIN STATE  
+-------------------------------------------------------------------------
+asa-fw-01       127.0.0.1  -            cisco-asa-cli-6.18    unlocked     
+asa-virtual-02  127.0.0.1  -            cisco-asa-cli-6.18    unlocked     
+asr9k-xr-7601   127.0.0.1  -            cisco-iosxr-cli-7.69  unlocked     
+dummy0          127.0.0.1  -            cisco-iosxr-cli-7.69  unlocked     
+ncs5k-xr-5702   127.0.0.1  -            cisco-iosxr-cli-7.69  unlocked     
+nexus-7000-02   127.0.0.1  -            cisco-nx-cli-5.27     unlocked     
+nexus-9000-01   127.0.0.1  -            cisco-nx-cli-5.27     unlocked     
+router-ios-01   127.0.0.1  -            cisco-ios-cli-6.109   unlocked     
+switch-ios-01   127.0.0.1  -            cisco-ios-cli-6.109   unlocked 
 ```
 
 ### 5. Accesing your environment
@@ -419,7 +501,9 @@ All your services are gone now.
 
 Depending on the amount of artifacts and services, the initial `packages reload force` of the container might take a while. To verify the progress, you can open the logs of your container in persistent mode:
 
-`docker logs -f my_nso_container_name`
+```bash
+docker logs -f my_nso_container_name
+```
 
 `⚠️ Why sometimes my NSO container fails to become healthy?`
 
@@ -439,17 +523,23 @@ A dedicated linux-based VM or cloud environment should provide a stable behaviou
 
 - Onboarding of this framework in a cloud-based environment for on demand creation without any host nor VM (ex. GitHub Codespaces)
 
+## 📚 References
+
+- [Cisco Crosswork NSO documentation](https://nso-docs.cisco.com/)
+- [Get started with service development](https://nso-docs.cisco.com/guides/development/introduction-to-automation/develop-a-simple-service)
+- [DEVNET-2224: Embracing DevOps for my NSO Use Cases lifecycle. Cisco Live EMEA 2025](https://github.com/ponchotitlan/embracing-devops-nso-usecase-lifecycle)
+
 ---
 
 <div align="center"><br />
-    Made with ☕️ by Poncho Sandoval - <code>Developer Advocate @ DevNet - Cisco Systems 🇵🇹</code><br /><br />
+    Made with ☕️ by Poncho Sandoval - <code>Developer Advocate 🥑 @ DevNet - Cisco Systems 🇵🇹</code><br /><br />
     <a href="mailto:alfsando@cisco.com?subject=Question%20about%20[NSO%20Consistent%20Dev%20Env]&body=Hello,%0A%0AI%20have%20a%20question%20regarding%20your%20project.%0A%0AThanks!">
         <img src="https://img.shields.io/badge/Contact%20me!-blue?style=flat&logo=gmail&labelColor=555555&logoColor=white" alt="Contact Me via Email!"/>
     </a>
-    <a href="https://github.com/ponchotitlan/radkit-to-grafana-dash/issues/new">
+    <a href="https://github.com/ponchotitlan/nso-consistent-dev-environment/issues/new">
       <img src="https://img.shields.io/badge/Open%20Issue-2088FF?style=flat&logo=github&labelColor=555555&logoColor=white" alt="Open an Issue"/>
     </a>
-    <a href="https://github.com/ponchotitlan/radkit-to-grafana-dash/fork">
+    <a href="https://github.com/ponchotitlan/nso-consistent-dev-environment/fork">
       <img src="https://img.shields.io/badge/Fork%20Repository-000000?style=flat&logo=github&labelColor=555555&logoColor=white" alt="Fork Repository"/>
     </a>
 </div>
