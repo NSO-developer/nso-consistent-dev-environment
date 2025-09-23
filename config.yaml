@@ -1,0 +1,20 @@
+nso-base: cisco-nso-prod:6.5
+nso-image: my-nso-custom-dev
+nso-name: my-nso-dev
+
+cxta-base: dockerhub.cisco.com/cxta-docker/cxta:latest
+cxta-name: my-cxta-dev
+
+downloads:
+  - https://github.com/ponchotitlan/dummy_artefact_repository/releases/download/resourcemanager6.5/ncs-6.5-resource-manager-project-4.2.11.tar.gz
+  - https://github.com/ponchotitlan/dummy_artefact_repository/releases/download/nx6.5/ncs-6.5-cisco-nx-5.27.3.tar.gz
+  - https://github.com/ponchotitlan/dummy_artefact_repository/releases/download/iosxr6.5/ncs-6.5-cisco-iosxr-7.69.tar.gz
+  - https://github.com/ponchotitlan/dummy_artefact_repository/releases/download/ios6.5/ncs-6.5-cisco-ios-6.109.4.tar.gz
+  - https://github.com/ponchotitlan/dummy_artefact_repository/releases/download/asa6.5/ncs-6.5-cisco-asa-6.18.23.tar.gz
+
+skip-compilation:
+  - resource-manager
+  - cisco-iosxr-cli-7.69
+  - cisco-ios-cli-6.109
+  - cisco-asa-cli-6.18
+  - cisco-nx-cli-5.27

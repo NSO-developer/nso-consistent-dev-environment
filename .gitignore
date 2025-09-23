@@ -1,0 +1,11 @@
+# Ignoring rendered files
+docker-compose.yml
+Dockerfile
+
+#Ignoring NSO mounted volume files
+ncs/ssh
+ncs/ssl
+ncs/ncs.crypto_keys
+
+# Ignoring secrets files
+artifact_server_token.txt
