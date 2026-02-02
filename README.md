@@ -497,7 +497,7 @@ All your services are gone now.
 
 ## ✏️ Editor (VSCode) setup for services styling
 
-There is a set of tools available in this repository for enforcing a coding style in your Cisco NSO services. This styling is inspected and enforced on every commit using **GitHub Copilot** and VSCode extensions. If you have these options enabled in your development environment, the following will be enforced: TBD
+There is a set of tools available in this repository for enforcing a coding style in your Cisco NSO services. This styling is inspected and enforced on every commit using **GitHub Copilot** and VSCode extensions. If you have these options enabled in your development environment, [the following will be enforced](https://github.com/NSO-developer/nso-consistent-dev-environment/blob/ai-assisted-coding-env/CODING-STANDARDS.md).
 
 ### 1. One-Command Setup
 
@@ -653,29 +653,9 @@ mypy python/
 pre-commit run --all-files
 ```
 
-## Troubleshooting
-
-### Pre-commit hooks failing
-```bash
-# Run checks manually to see detailed errors
-make dev-check
-
-# Fix formatting issues automatically
-make dev-format
-```
-
-### VS Code not recognizing settings
-1. Restart VS Code after running `make dev-setup`
-2. Ensure `.vscode/settings.json` exists in the workspace root
-3. Check that Python extension is installed
-
-### Type checking errors
-```bash
-# Run mypy with verbose output
-mypy --show-error-codes python/
-```
-
 ## 🔥 Troubleshooting
+
+### Docker environment
 
 `⚠️ Why is my NSO container taking too long to become healthy?`
 
@@ -698,6 +678,28 @@ It has been seen that the behaviour `of the NSO container image on Mac hosts wit
 It is recommended to either bring down the environment (`make down`) and bring it up again (`make run`) several times until the container comes up gracefully, or opt for a different host environment.
 
 A dedicated linux-based VM or cloud environment should provide a stable behaviour for the NSO container booting.
+
+### VSCode environment
+
+`⚠️ Pre-commit hooks failing`
+```bash
+# Run checks manually to see detailed errors
+make dev-check
+
+# Fix formatting issues automatically
+make dev-format
+```
+
+`⚠️ VS Code not recognizing settings`
+1. Restart VS Code after running `make dev-setup`
+2. Ensure `.vscode/settings.json` exists in the workspace root
+3. Check that Python extension is installed
+
+`⚠️ Type checking errors`
+```bash
+# Run mypy with verbose output
+mypy --show-error-codes python/
+```
 
 ## 📚 References
 
