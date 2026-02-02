@@ -495,6 +495,186 @@ docker compose down
 
 All your services are gone now.
 
+## ✏️ Editor (VSCode) setup for services styling
+
+There is a set of tools available in this repository for enforcing a coding style in your Cisco NSO services. This styling is inspected and enforced on every commit using **GitHub Copilot** and VSCode extensions. If you have these options enabled in your development environment, the following will be enforced: TBD
+
+### 1. One-Command Setup
+
+```bash
+# Install all tools and configure pre-commit hooks
+make dev-setup
+```
+
+This will:
+- Install all required Python development tools (black, isort, mypy, pylint, pre-commit)
+- Configure pre-commit hooks
+- Set up the development environment
+
+### 2. Manual Installation (Alternative)
+
+If you prefer manual setup:
+
+```bash
+# Install pre-commit
+pip install pre-commit
+
+# Install Python development tools
+pip install black isort mypy pylint
+
+# Install VS Code extensions
+code --install-extension ms-python.python
+code --install-extension njpwerner.autodocstring
+code --install-extension GitHub.copilot
+```
+
+### 3. Initialize Pre-commit Hooks (if not using make dev-setup)
+
+```bash
+pre-commit install
+```
+
+### 4. Verify Setup
+
+```bash
+# Run all code quality checks
+make dev-check
+```
+
+## Makefile Targets for Development
+
+### Setup & Installation
+- `make dev-setup` - Complete development environment setup (installs tools + configures hooks)
+- `make dev-install` - Install Python development tools only
+- `make dev-precommit` - Install pre-commit hooks only
+
+### Code Quality Checks
+- `make dev-check` - Run all quality checks (format + lint + type-check)
+- `make dev-format` - Format code with Black and sort imports with isort
+- `make dev-lint` - Run pylint on all Python files
+- `make dev-type-check` - Run mypy type checking
+- `make dev-precommit-all` - Run all pre-commit hooks on all files
+
+### Maintenance
+- `make dev-clean` - Remove Python cache files and build artifacts
+
+## Coding Standards
+
+### Naming Conventions
+- **Service packages**: Must end with `-cfs` (customer-facing) or `-rfs` (resource-facing)
+  - ✅ `my-vpn-service-cfs`
+  - ❌ `my-vpn-service`
+
+### Type Hints (Required)
+```python
+def configure_vpn(device: str, vpn_id: int) -> bool:
+    """Configure VPN on device.
+    
+    Args:
+        device: Device name to configure
+        vpn_id: VPN identifier
+        
+    Returns:
+        True if configuration successful
+    """
+    pass
+```
+
+### Docstrings (Required - Google Style)
+```python
+def create_service(service_name: str, params: dict) -> None:
+    """Create a new NSO service instance.
+    
+    Args:
+        service_name: Name of the service to create
+        params: Dictionary of service parameters
+        
+    Raises:
+        ValueError: If service_name is invalid
+    """
+    pass
+```
+
+## GitHub Copilot Integration
+
+GitHub Copilot is configured to automatically follow our coding standards through `.github/copilot-instructions.md`.
+
+When writing code:
+- Copilot will suggest properly typed and documented functions
+- Service names will automatically include `-cfs` or `-rfs` suffixes
+- Docstrings will follow Google style format
+
+## Pre-commit Checks
+
+Before each commit, the following checks run automatically:
+- ✅ Code formatting (Black)
+- ✅ Import sorting (isort)
+- ✅ Type checking (mypy)
+- ✅ Naming conventions (custom script)
+- ✅ Docstring presence
+
+To bypass checks (not recommended):
+```bash
+git commit --no-verify
+```
+
+## Typical Development Workflow
+
+```bash
+# 1. One-time setup (first time only)
+make dev-setup
+
+# 2. Write your NSO service code with GitHub Copilot assistance
+
+# 3. Before committing, run quality checks
+make dev-check
+
+# 4. Commit your changes (pre-commit hooks run automatically)
+git add .
+git commit -m "Add new feature"
+
+# 5. Clean up if needed
+make dev-clean
+```
+
+## Manual Checks (without Makefile)
+
+```bash
+# Format code
+black .
+
+# Sort imports
+isort .
+
+# Type check
+mypy python/
+
+# Run all pre-commit hooks
+pre-commit run --all-files
+```
+
+## Troubleshooting
+
+### Pre-commit hooks failing
+```bash
+# Run checks manually to see detailed errors
+make dev-check
+
+# Fix formatting issues automatically
+make dev-format
+```
+
+### VS Code not recognizing settings
+1. Restart VS Code after running `make dev-setup`
+2. Ensure `.vscode/settings.json` exists in the workspace root
+3. Check that Python extension is installed
+
+### Type checking errors
+```bash
+# Run mypy with verbose output
+mypy --show-error-codes python/
+```
+
 ## 🔥 Troubleshooting
 
 `⚠️ Why is my NSO container taking too long to become healthy?`
@@ -518,10 +698,6 @@ It has been seen that the behaviour `of the NSO container image on Mac hosts wit
 It is recommended to either bring down the environment (`make down`) and bring it up again (`make run`) several times until the container comes up gracefully, or opt for a different host environment.
 
 A dedicated linux-based VM or cloud environment should provide a stable behaviour for the NSO container booting.
-
-## 🔮 Future work
-
-- Onboarding of this framework in a cloud-based environment for on demand creation without any host nor VM (ex. GitHub Codespaces)
 
 ## 📚 References
 

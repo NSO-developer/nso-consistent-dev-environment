@@ -1,4 +1,5 @@
 .PHONY: all render register build run up compile reload netsims down
+.PHONY: dev-setup dev-install dev-precommit dev-check dev-format dev-lint dev-type-check dev-clean
 
 # Makefile for building, creating and cleaning
 # the NSO and CXTA containers for this development environment.
@@ -65,3 +66,70 @@ up: render register build run compile reload netsims
 down:
 	@echo "--- 🛑 Stopping Docker Compose services ---"
 	docker compose down
+
+# ==============================================================================
+# Development Environment Setup Targets
+# ==============================================================================
+
+# Target to setup the complete development environment
+dev-setup: dev-install dev-precommit
+	@echo "--- ✅ Development environment setup complete! ---"
+	@echo ""
+	@echo "Next steps:"
+	@echo "  1. Restart VS Code to apply settings"
+	@echo "  2. Start coding - GitHub Copilot will follow your standards"
+	@echo "  3. Run 'make dev-check' before committing"
+
+# Target to install all required Python development tools
+dev-install:
+	@echo "--- 📦 Installing Python development tools ---"
+	pip install --upgrade pip
+	pip install pre-commit black isort mypy pylint types-all
+	@echo "--- ✅ Development tools installed ---"
+
+# Target to initialize pre-commit hooks
+dev-precommit:
+	@echo "--- 🎣 Setting up pre-commit hooks ---"
+	pre-commit install
+	@echo "--- ✅ Pre-commit hooks installed ---"
+
+# Target to run all code quality checks manually
+dev-check: dev-format dev-lint dev-type-check
+	@echo "--- ✅ All code quality checks passed! ---"
+
+# Target to format code with Black and isort
+dev-format:
+	@echo "--- 🎨 Formatting code with Black ---"
+	black python/ packages/ || true
+	@echo "--- 📚 Sorting imports with isort ---"
+	isort python/ packages/ || true
+	@echo "--- ✅ Code formatting complete ---"
+
+# Target to run linting checks
+dev-lint:
+	@echo "--- 🔍 Running pylint ---"
+	find python packages -name "*.py" -type f | xargs pylint || true
+	@echo "--- ✅ Linting complete ---"
+
+# Target to run type checking with mypy
+dev-type-check:
+	@echo "--- 🔎 Running type checks with mypy ---"
+	mypy python/ packages/ || true
+	@echo "--- ✅ Type checking complete ---"
+
+# Target to run pre-commit on all files
+dev-precommit-all:
+	@echo "--- 🔄 Running pre-commit on all files ---"
+	pre-commit run --all-files
+	@echo "--- ✅ Pre-commit checks complete ---"
+
+# Target to clean Python cache and build artifacts
+dev-clean:
+	@echo "--- 🧹 Cleaning Python cache and artifacts ---"
+	find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name "*.egg-info" -exec rm -rf {} + 2>/dev/null || true
+	find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	find . -type f -name "*.pyo" -delete 2>/dev/null || true
+	find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+	@echo "--- ✅ Cleanup complete ---"
