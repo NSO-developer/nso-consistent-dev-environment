@@ -9,3 +9,6 @@ ncs/ncs.crypto_keys
 
 # Ignoring secrets files
 artifact_server_token.txt
+
+# Ignoring virtual environment .venv
+.venv/

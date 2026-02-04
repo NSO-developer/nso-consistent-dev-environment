@@ -1,5 +1,5 @@
 .PHONY: all render register build run up compile reload netsims down
-.PHONY: dev-setup dev-install dev-precommit dev-check dev-format dev-lint dev-type-check dev-clean
+.PHONY: dev-setup dev-install dev-check dev-format dev-lint dev-type-check dev-clean
 
 # Makefile for building, creating and cleaning
 # the NSO and CXTA containers for this development environment.
@@ -71,57 +71,72 @@ down:
 # Development Environment Setup Targets
 # ==============================================================================
 
+# Python virtual environment paths
+VENV_DIR := .venv
+VENV_PYTHON := $(VENV_DIR)/bin/python
+VENV_PIP := $(VENV_DIR)/bin/pip
+VENV_BLACK := $(VENV_DIR)/bin/black
+VENV_ISORT := $(VENV_DIR)/bin/isort
+VENV_MYPY := $(VENV_DIR)/bin/mypy
+VENV_PYLINT := $(VENV_DIR)/bin/pylint
+
+# Target to create Python virtual environment
+dev-venv:
+	@echo "--- 🐍 Creating Python virtual environment ---"
+	@if [ ! -d "$(VENV_DIR)" ]; then \
+		python3 -m venv $(VENV_DIR); \
+		echo "--- ✅ Virtual environment created at $(VENV_DIR) ---"; \
+	else \
+		echo "--- ℹ️  Virtual environment already exists ---"; \
+	fi
+
 # Target to setup the complete development environment
-dev-setup: dev-install dev-precommit
+dev-setup: dev-venv dev-install
 	@echo "--- ✅ Development environment setup complete! ---"
 	@echo ""
 	@echo "Next steps:"
-	@echo "  1. Restart VS Code to apply settings"
-	@echo "  2. Start coding - GitHub Copilot will follow your standards"
-	@echo "  3. Run 'make dev-check' before committing"
+	@echo "  1. Activate the virtual environment: source $(VENV_DIR)/bin/activate"
+	@echo "  2. Restart VS Code to apply settings"
+	@echo "  3. Start coding - GitHub Copilot will follow your standards"
+	@echo "  4. Run 'make dev-check' before committing"
 
 # Target to install all required Python development tools
-dev-install:
-	@echo "--- 📦 Installing Python development tools ---"
-	pip install --upgrade pip
-	pip install pre-commit black isort mypy pylint types-all
+dev-install: dev-venv
+	@echo "--- 📦 Installing Python development tools in virtual environment ---"
+	$(VENV_PIP) install --upgrade pip
+	$(VENV_PIP) install black isort mypy pylint
 	@echo "--- ✅ Development tools installed ---"
-
-# Target to initialize pre-commit hooks
-dev-precommit:
-	@echo "--- 🎣 Setting up pre-commit hooks ---"
-	pre-commit install
-	@echo "--- ✅ Pre-commit hooks installed ---"
 
 # Target to run all code quality checks manually
 dev-check: dev-format dev-lint dev-type-check
 	@echo "--- ✅ All code quality checks passed! ---"
 
 # Target to format code with Black and isort
-dev-format:
+dev-format: dev-venv
 	@echo "--- 🎨 Formatting code with Black ---"
-	black python/ packages/ || true
+	$(VENV_BLACK) python/ packages/ || true
 	@echo "--- 📚 Sorting imports with isort ---"
-	isort python/ packages/ || true
+	$(VENV_ISORT) python/ packages/ || true
 	@echo "--- ✅ Code formatting complete ---"
 
 # Target to run linting checks
-dev-lint:
+dev-lint: dev-venv
 	@echo "--- 🔍 Running pylint ---"
-	find python packages -name "*.py" -type f | xargs pylint || true
+	find python packages -name "*.py" -type f | xargs $(VENV_PYLINT) || true
 	@echo "--- ✅ Linting complete ---"
 
 # Target to run type checking with mypy
-dev-type-check:
+dev-type-check: dev-venv
 	@echo "--- 🔎 Running type checks with mypy ---"
-	mypy python/ packages/ || true
+	@DIRS=""; \
+	if [ -d "python" ]; then DIRS="$$DIRS python"; fi; \
+	if [ -d "packages" ]; then DIRS="$$DIRS packages"; fi; \
+	if [ -n "$$DIRS" ]; then \
+		$(VENV_MYPY) $$DIRS || true; \
+	else \
+		echo "--- ℹ️  No Python directories found to type check ---"; \
+	fi
 	@echo "--- ✅ Type checking complete ---"
-
-# Target to run pre-commit on all files
-dev-precommit-all:
-	@echo "--- 🔄 Running pre-commit on all files ---"
-	pre-commit run --all-files
-	@echo "--- ✅ Pre-commit checks complete ---"
 
 # Target to clean Python cache and build artifacts
 dev-clean:
@@ -132,4 +147,6 @@ dev-clean:
 	find . -type f -name "*.pyo" -delete 2>/dev/null || true
 	find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
+	@echo "--- 🗑️  Removing virtual environment ---"
+	rm -rf $(VENV_DIR)
 	@echo "--- ✅ Cleanup complete ---"

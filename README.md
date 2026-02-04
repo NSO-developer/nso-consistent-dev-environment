@@ -497,41 +497,52 @@ All your services are gone now.
 
 ## ✏️ Editor (VSCode) setup for services styling
 
-There is a set of tools available in this repository for enforcing a coding style in your Cisco NSO services. This styling is inspected and enforced on every commit using **GitHub Copilot** and VSCode extensions. If you have these options enabled in your development environment, [the following will be enforced](https://github.com/NSO-developer/nso-consistent-dev-environment/blob/ai-assisted-coding-env/CODING-STANDARDS.md).
+There is a set of tools available in this repository for enforcing a coding style in your Cisco NSO services. This styling is inspected and enforced using **GitHub Copilot** and VSCode extensions. If you have these options enabled in your development environment, [the following will be enforced](https://github.com/NSO-developer/nso-consistent-dev-environment/blob/ai-assisted-coding-env/CODING-STANDARDS.md).
+
+> 💡 **All development tools run in a Python virtual environment (`.venv`)** to avoid conflicts with your system Python installation.
 
 ### 1. One-Command Setup
 
 ```bash
-# Install all tools and configure pre-commit hooks
+# Install all tools in a virtual environment
 make dev-setup
 ```
 
 This will:
-- Install all required Python development tools (black, isort, mypy, pylint, pre-commit)
-- Configure pre-commit hooks
+- Create a Python virtual environment at `.venv`
+- Install all required Python development tools (black, isort, mypy, pylint)
 - Set up the development environment
 
-### 2. Manual Installation (Alternative)
+### 2. Activate the Virtual Environment
+
+After running `make dev-setup`, activate the virtual environment:
+
+```bash
+# Activate virtual environment (Linux/Mac)
+source .venv/bin/activate
+
+# Deactivate when done
+deactivate
+```
+
+> 💡 **Note:** You don't need to manually activate the virtual environment to run `make dev-*` commands. The Makefile automatically uses the virtual environment's tools.
+
+### 3. Manual Installation (Alternative)
 
 If you prefer manual setup:
 
 ```bash
-# Install pre-commit
-pip install pre-commit
+# Create and activate virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
 
 # Install Python development tools
-pip install black isort mypy pylint
+pip install black isort mypy pylint types-all
 
 # Install VS Code extensions
 code --install-extension ms-python.python
 code --install-extension njpwerner.autodocstring
 code --install-extension GitHub.copilot
-```
-
-### 3. Initialize Pre-commit Hooks (if not using make dev-setup)
-
-```bash
-pre-commit install
 ```
 
 ### 4. Verify Setup
@@ -544,19 +555,25 @@ make dev-check
 ## Makefile Targets for Development
 
 ### Setup & Installation
-- `make dev-setup` - Complete development environment setup (installs tools + configures hooks)
-- `make dev-install` - Install Python development tools only
-- `make dev-precommit` - Install pre-commit hooks only
+- `make dev-venv` - Create Python virtual environment at `.venv` (automatic with other targets)
+- `make dev-setup` - **Complete development environment setup** (creates venv, installs tools)
+- `make dev-install` - Install Python development tools in virtual environment
 
 ### Code Quality Checks
+All quality check commands automatically use the virtual environment:
 - `make dev-check` - Run all quality checks (format + lint + type-check)
 - `make dev-format` - Format code with Black and sort imports with isort
 - `make dev-lint` - Run pylint on all Python files
 - `make dev-type-check` - Run mypy type checking
-- `make dev-precommit-all` - Run all pre-commit hooks on all files
 
 ### Maintenance
-- `make dev-clean` - Remove Python cache files and build artifacts
+- `make dev-clean` - Remove Python cache files, build artifacts, **and the virtual environment**
+
+> 💡 **Virtual Environment Benefits:**
+> - Isolated Python dependencies (won't conflict with system Python)
+> - Consistent tool versions across the team
+> - Easy cleanup with `make dev-clean`
+> - No need to manually activate venv for `make` commands
 
 ## Coding Standards
 
@@ -604,42 +621,39 @@ When writing code:
 - Service names will automatically include `-cfs` or `-rfs` suffixes
 - Docstrings will follow Google style format
 
-## Pre-commit Checks
-
-Before each commit, the following checks run automatically:
-- ✅ Code formatting (Black)
-- ✅ Import sorting (isort)
-- ✅ Type checking (mypy)
-- ✅ Naming conventions (custom script)
-- ✅ Docstring presence
-
-To bypass checks (not recommended):
-```bash
-git commit --no-verify
-```
-
 ## Typical Development Workflow
 
 ```bash
 # 1. One-time setup (first time only)
 make dev-setup
 
-# 2. Write your NSO service code with GitHub Copilot assistance
+# 2. (Optional) Activate virtual environment for manual commands
+source .venv/bin/activate
 
-# 3. Before committing, run quality checks
+# 3. Write your NSO service code with GitHub Copilot assistance
+
+# 4. Before committing, run quality checks (no activation needed)
 make dev-check
 
-# 4. Commit your changes (pre-commit hooks run automatically)
+# 5. Commit your changes
 git add .
 git commit -m "Add new feature"
 
-# 5. Clean up if needed
+# 6. (Optional) Deactivate virtual environment
+deactivate
+
+# 7. Clean up if needed (removes venv too)
 make dev-clean
 ```
 
 ## Manual Checks (without Makefile)
 
+If you prefer to run tools manually, activate the virtual environment first:
+
 ```bash
+# Activate virtual environment
+source .venv/bin/activate
+
 # Format code
 black .
 
@@ -649,8 +663,51 @@ isort .
 # Type check
 mypy python/
 
-# Run all pre-commit hooks
-pre-commit run --all-files
+# Deactivate when done
+deactivate
+```
+
+### VSCode environment
+
+`⚠️ Quality checks failing`
+```bash
+# Run checks manually to see detailed errors
+make dev-check
+
+# Fix formatting issues automatically
+make dev-format
+
+# If virtual environment is corrupted, recreate it
+make dev-clean
+make dev-setup
+```
+
+`⚠️ VS Code not recognizing settings`
+1. Restart VS Code after running `make dev-setup`
+2. Ensure `.vscode/settings.json` exists in the workspace root
+3. Check that Python extension is installed
+4. Verify VS Code is using the virtual environment Python interpreter (`.venv/bin/python`)
+
+`⚠️ Type checking errors`
+```bash
+# Activate virtual environment first
+source .venv/bin/activate
+
+# Run mypy with verbose output
+mypy --show-error-codes python/
+
+# Deactivate when done
+deactivate
+```
+
+`⚠️ Virtual environment issues`
+```bash
+# Remove and recreate virtual environment
+make dev-clean
+make dev-setup
+
+# Verify virtual environment was created
+ls -la .venv/
 ```
 
 ## 🔥 Troubleshooting
@@ -681,24 +738,45 @@ A dedicated linux-based VM or cloud environment should provide a stable behaviou
 
 ### VSCode environment
 
-`⚠️ Pre-commit hooks failing`
+`⚠️ Quality checks failing`
 ```bash
 # Run checks manually to see detailed errors
 make dev-check
 
 # Fix formatting issues automatically
 make dev-format
+
+# If virtual environment is corrupted, recreate it
+make dev-clean
+make dev-setup
 ```
 
 `⚠️ VS Code not recognizing settings`
 1. Restart VS Code after running `make dev-setup`
 2. Ensure `.vscode/settings.json` exists in the workspace root
 3. Check that Python extension is installed
+4. Verify VS Code is using the virtual environment Python interpreter (`.venv/bin/python`)
 
 `⚠️ Type checking errors`
 ```bash
+# Activate virtual environment first
+source .venv/bin/activate
+
 # Run mypy with verbose output
 mypy --show-error-codes python/
+
+# Deactivate when done
+deactivate
+```
+
+`⚠️ Virtual environment issues`
+```bash
+# Remove and recreate virtual environment
+make dev-clean
+make dev-setup
+
+# Verify virtual environment was created
+ls -la .venv/
 ```
 
 ## 📚 References

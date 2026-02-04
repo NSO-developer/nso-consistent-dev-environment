@@ -7,24 +7,24 @@ This document provides a comprehensive overview of all coding standards enforced
 | Policy | Description | Enforcement Tool | Configuration File | Auto-fix Available |
 |--------|-------------|------------------|-------------------|-------------------|
 | **Naming Conventions** |
-| Package suffix `-cfs` or `-rfs` | All package/service folders must end with `-cfs` (customer-facing) or `-rfs` (resource-facing) | Custom pre-commit hook | `scripts/check_naming.py` | ❌ Manual fix required |
-| Service name suffix | Service names must follow same `-cfs` or `-rfs` convention | Custom pre-commit hook | `scripts/check_naming.py` | ❌ Manual fix required |
+| Package suffix `-cfs` or `-rfs` | All package/service folders must end with `-cfs` (customer-facing) or `-rfs` (resource-facing) | Manual review | GitHub Copilot guidance | ❌ Manual fix required |
+| Service name suffix | Service names must follow same `-cfs` or `-rfs` convention | Manual review | GitHub Copilot guidance | ❌ Manual fix required |
 | Function/variable naming | Use `snake_case` for functions and variables | pylint | `pyproject.toml` | ❌ Manual fix required |
 | Class naming | Use `PascalCase` for class names | pylint | `pyproject.toml` | ❌ Manual fix required |
 | **Documentation** |
-| Function docstrings | All functions must have Google-style docstrings | Custom pre-commit hook | `scripts/check_naming.py` | ❌ Manual fix required |
+| Function docstrings | All functions must have Google-style docstrings | Manual review | GitHub Copilot guidance | ❌ Manual fix required |
 | Class docstrings | All classes must have docstrings | pylint | `pyproject.toml` | ❌ Manual fix required |
 | Docstring format | Must follow Google style format | GitHub Copilot | `.github/copilot-instructions.md` | ✅ Copilot suggests correct format |
 | **Type Hints** |
-| Parameter type hints | All function parameters must have type hints | mypy + custom hook | `pyproject.toml` + `scripts/check_naming.py` | ❌ Manual fix required |
+| Parameter type hints | All function parameters must have type hints | mypy | `pyproject.toml` | ❌ Manual fix required |
 | Return type hints | All functions must have return type hints | mypy | `pyproject.toml` | ❌ Manual fix required |
 | Type hint completeness | No incomplete type definitions allowed | mypy | `pyproject.toml` | ❌ Manual fix required |
 | **Code Formatting** |
 | Line length | Maximum 88 characters per line | Black | `pyproject.toml` | ✅ Auto-fixed by Black |
 | Code style | PEP 8 compliance | Black + pylint | `pyproject.toml` | ✅ Auto-fixed by Black |
 | Import sorting | Imports must be sorted alphabetically and grouped | isort | `pyproject.toml` | ✅ Auto-fixed by isort |
-| Trailing whitespace | No trailing whitespace allowed | pre-commit hooks | `.pre-commit-config.yaml` | ✅ Auto-fixed |
-| End of file | Files must end with newline | pre-commit hooks | `.pre-commit-config.yaml` | ✅ Auto-fixed |
+| Trailing whitespace | No trailing whitespace allowed | Manual review | VS Code settings | ✅ Auto-fixed on save |
+| End of file | Files must end with newline | Manual review | VS Code settings | ✅ Auto-fixed on save |
 | **Code Quality** |
 | Unused imports | No unused imports allowed | pylint | `pyproject.toml` | ❌ Manual fix required |
 | Unused variables | No unused variables allowed | pylint | `pyproject.toml` | ❌ Manual fix required |
@@ -56,25 +56,6 @@ This document provides a comprehensive overview of all coding standards enforced
 - mypy type checking (strict mode, no untyped definitions)
 - pylint linting rules (max line length, max args, good variable names)
 
-### `.pre-commit-config.yaml`
-**Purpose**: Automated pre-commit validation hooks
-
-**Enforces**:
-- Code formatting with Black (auto-fix)
-- Import sorting with isort (auto-fix)
-- Type checking with mypy
-- Custom naming conventions check
-- Trailing whitespace removal (auto-fix)
-- End-of-file newline (auto-fix)
-
-### `scripts/check_naming.py`
-**Purpose**: Custom validation for NSO-specific naming conventions
-
-**Enforces**:
-- Package/service folder names ending with `-cfs` or `-rfs`
-- Presence of docstrings in all functions
-- Presence of type hints in function parameters
-
 ### `.vscode/settings.json`
 **Purpose**: VS Code editor configuration for team consistency
 
@@ -97,12 +78,7 @@ This document provides a comprehensive overview of all coding standards enforced
 - **When**: On file save
 - **Action**: Auto-formats code, organizes imports
 
-### 3. **Commit Time** (Blocking)
-- **Tool**: Pre-commit hooks
-- **When**: Before git commit
-- **Action**: Validates all standards, blocks non-compliant commits
-
-### 4. **Manual Check** (On-demand)
+### 3. **Manual Check** (On-demand)
 - **Tool**: Makefile targets
 - **When**: Running `make dev-check`
 - **Action**: Comprehensive validation report
@@ -119,11 +95,6 @@ make dev-check
 make dev-format
 ```
 
-### To see what will be checked on commit:
-```bash
-pre-commit run --all-files
-```
-
 ## ✅ Compliance Checklist
 
 Before committing code, ensure:
@@ -134,7 +105,7 @@ Before committing code, ensure:
 - [ ] All functions have return type hints
 - [ ] Code follows PEP 8 (Black will auto-fix this)
 - [ ] Imports are sorted (isort will auto-fix this)
-- [ ] No trailing whitespace (pre-commit will auto-fix this)
+- [ ] No trailing whitespace (VS Code will auto-fix on save)
 - [ ] No unused imports or variables
 - [ ] NSO callbacks follow proper naming (cb_create, cb_pre_modification, etc.)
 

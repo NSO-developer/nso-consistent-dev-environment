@@ -1,6 +1,7 @@
 # -*- mode: python; python-indent: 4 -*-
-import ncs
 from ncs.application import Service
+
+import ncs
 
 
 # ------------------------
