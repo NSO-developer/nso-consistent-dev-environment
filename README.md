@@ -190,9 +190,11 @@ netsims:
 
 The `Makefile` provides convenient commands to manage your custom NSO environment.
 
+### Core NSO Environment Commands
+
 | Command | Description |
 |---|---|
-| `make` 🌟 | Default target: builds and then starts all services using the `render`, `register`, `build`, `run`, `compile`, `reload` and `netsims` targets.  |
+| `make` 🌟 | Default target: builds and starts all services using `render`, `register`, `build`, `run`, `compile`, `reload` and `netsims` targets. Also runs `dev-setup`. |
 | `make render` ✨ | Renders the templates `docker-compose.j2` and `Dockerfile.j2`. |
 | `make register` 📤 | Mounts a local Docker registry for the NSO container image if your NSO base image is not registered anywhere. |
 | `make build` 🏗️ | Builds the NSO custom Docker image with BuildKit secrets. |
@@ -201,6 +203,20 @@ The `Makefile` provides convenient commands to manage your custom NSO environmen
 | `make reload` 🔀 | Reloads all the services by running the `packages reload` command in the NSO container CLI. |
 | `make netsims` 🛸 | Loads the preconfiguration files from the repository and creates/onboards the netsim devices. |
 | `make down` 🛑 | Stops Docker Compose services. |
+
+### Development Environment Commands
+
+| Command | Description |
+|---|---|
+| `make dev-setup` 🐍 | **Complete development environment setup** - Creates virtual environment, extracts NSO libraries, and installs all development tools. |
+| `make dev-venv` 📦 | Creates Python virtual environment at `.venv` (automatically called by other dev targets). |
+| `make dev-nso-libs` 📚 | Extracts NSO Python libraries from the running container to `./ncs-pyapi`. |
+| `make dev-install` 🔧 | Installs Python development tools (black, isort, mypy, pylint) in the virtual environment. |
+| `make dev-check` ✅ | Runs all code quality checks (format + lint + type-check). |
+| `make dev-format` 🎨 | Formats code with Black and sorts imports with isort. |
+| `make dev-lint` 🔍 | Runs pylint on all Python files. |
+| `make dev-type-check` 🔎 | Runs mypy type checking on Python code. |
+| `make dev-clean` 🧹 | Removes Python cache, build artifacts, virtual environment, and extracted NSO libraries. |
 
 Example:
 
@@ -472,14 +488,28 @@ router-ios-01   127.0.0.1  -            cisco-ios-cli-6.109   unlocked
 switch-ios-01   127.0.0.1  -            cisco-ios-cli-6.109   unlocked 
 ```
 
-### 5. Accesing your environment
-If you are using the Visual Studio IDE, you can [attach your IDE to your NSO running container](https://code.visualstudio.com/docs/devcontainers/attach-container) and use it like if it was your local environment.
+### 5. Creating New Services
 
-![vstudio-container](doc-images/vstudio_01.png)
+When you need to create a new NSO service, use the official `ncs-make-package` command inside your NSO container. **Do not create service files manually**.
 
-Given that your working services are mounted in a volume, any changes done will reflect in your local repository. Therefore, you can commit and push changes when you release a new version of your services.
+**Start developing** with GitHub Copilot assistance for:
+   - Adding business logic to service callbacks
+   - Implementing type hints and docstrings
+   - Creating XML templates
+   - Writing proper error handling
 
-### 6. Destroying your environment
+> 💡 **GitHub Copilot Integration**: Copilot is configured to guide you in using `ncs-make-package` instead of manually creating files. When you ask Copilot to create a service, it will provide the appropriate command.
+
+### 6. Accesing your environment
+If you are using the Visual Studio IDE, you can use the shortcut defined in [this task file](.vscode/tasks.json). Click on `Terminal > Run Task > Open NSO Container`. A new terminal will pop-up with a prompt inside of your NSO container.
+
+```bash
+ *  Executing task: docker exec -it my-nso-dev /bin/bash 
+
+[root@155b06c887c2 packages]# 
+```
+
+### 7. Destroying your environment
 ```bash
 make down
 ```

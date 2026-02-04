@@ -20,5 +20,11 @@
     "github.copilot.enable": {
         "*": true,
         "python": true
-    }
+    },
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/ncs-pyapi"
+    ],
+    "python.autoComplete.extraPaths": [
+        "${workspaceFolder}/ncs-pyapi"
+    ]
 }

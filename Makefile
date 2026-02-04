@@ -1,5 +1,5 @@
 .PHONY: all render register build run up compile reload netsims down
-.PHONY: dev-setup dev-install dev-check dev-format dev-lint dev-type-check dev-clean
+.PHONY: dev-setup dev-venv dev-nso-libs dev-install dev-check dev-format dev-lint dev-type-check dev-clean
 
 # Makefile for building, creating and cleaning
 # the NSO and CXTA containers for this development environment.
@@ -11,7 +11,7 @@
 # 4. A 'Dockerfile' for the NSO custom image, configured to use BuildKit's
 
 # Default target: build and then up
-all: up
+all: up dev-setup
 
 # Target to render the templates in this repository (*j2 files) with the information from config.yaml
 render:
@@ -80,6 +80,11 @@ VENV_ISORT := $(VENV_DIR)/bin/isort
 VENV_MYPY := $(VENV_DIR)/bin/mypy
 VENV_PYLINT := $(VENV_DIR)/bin/pylint
 
+# NSO Python library paths
+NSO_CONTAINER := my-nso-dev
+NSO_PYAPI_SRC := /opt/ncs/current/src/ncs/pyapi
+NSO_PYAPI_LOCAL := ./ncs-pyapi
+
 # Target to create Python virtual environment
 dev-venv:
 	@echo "--- 🐍 Creating Python virtual environment ---"
@@ -90,21 +95,46 @@ dev-venv:
 		echo "--- ℹ️  Virtual environment already exists ---"; \
 	fi
 
+# Target to extract NSO Python libraries from container
+dev-nso-libs:
+	@echo "--- 📚 Extracting NSO Python libraries from container ---"
+	@if ! docker ps --format '{{.Names}}' | grep -q "^$(NSO_CONTAINER)$$"; then \
+		echo "--- ❌ ERROR: Container $(NSO_CONTAINER) is not running ---"; \
+		echo "--- ℹ️  Please start the container first with 'make up' ---"; \
+		exit 1; \
+	fi
+	@if [ -d "$(NSO_PYAPI_LOCAL)" ]; then \
+		echo "--- ℹ️  Removing existing NSO libraries at $(NSO_PYAPI_LOCAL) ---"; \
+		rm -rf $(NSO_PYAPI_LOCAL); \
+	fi
+	@echo "--- 📦 Copying NSO Python API from container ---"
+	docker cp $(NSO_CONTAINER):$(NSO_PYAPI_SRC) $(NSO_PYAPI_LOCAL)
+	@echo "--- ✅ NSO Python libraries extracted to $(NSO_PYAPI_LOCAL) ---"
+
 # Target to setup the complete development environment
-dev-setup: dev-venv dev-install
+dev-setup: dev-venv dev-nso-libs dev-install
 	@echo "--- ✅ Development environment setup complete! ---"
 	@echo ""
 	@echo "Next steps:"
 	@echo "  1. Activate the virtual environment: source $(VENV_DIR)/bin/activate"
 	@echo "  2. Restart VS Code to apply settings"
-	@echo "  3. Start coding - GitHub Copilot will follow your standards"
-	@echo "  4. Run 'make dev-check' before committing"
+	@echo "  3. Select the Python interpreter from $(VENV_DIR) in VS Code"
+	@echo "  4. Start coding - GitHub Copilot will follow your standards"
+	@echo "  5. Run 'make dev-check' before committing"
 
 # Target to install all required Python development tools
 dev-install: dev-venv
 	@echo "--- 📦 Installing Python development tools in virtual environment ---"
 	$(VENV_PIP) install --upgrade pip
 	$(VENV_PIP) install black isort mypy pylint
+	@if [ -d "$(NSO_PYAPI_LOCAL)" ]; then \
+		echo "--- 📚 Configuring NSO Python libraries ---"; \
+		echo "$(shell pwd)/$(NSO_PYAPI_LOCAL)" > $(VENV_DIR)/lib/python*/site-packages/ncs-pyapi.pth; \
+		echo "--- ✅ NSO Python libraries configured in virtual environment ---"; \
+	else \
+		echo "--- ⚠️  NSO libraries not found at $(NSO_PYAPI_LOCAL) ---"; \
+		echo "--- ℹ️  Run 'make dev-nso-libs' to extract them from the container ---"; \
+	fi
 	@echo "--- ✅ Development tools installed ---"
 
 # Target to run all code quality checks manually
@@ -149,4 +179,6 @@ dev-clean:
 	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
 	@echo "--- 🗑️  Removing virtual environment ---"
 	rm -rf $(VENV_DIR)
+	@echo "--- 🗑️  Removing extracted NSO libraries ---"
+	rm -rf $(NSO_PYAPI_LOCAL)
 	@echo "--- ✅ Cleanup complete ---"

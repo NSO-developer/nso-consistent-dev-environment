@@ -22,3 +22,7 @@ __pycache__/
 build/
 dist/
 .mypy_cache/
+*load-dir/
+
+# Ignoring imported NSO Python libraries
+ncs-pyapi/

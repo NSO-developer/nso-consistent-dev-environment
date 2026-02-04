@@ -2,6 +2,7 @@ services:
   {{ nso-name }}:
     container_name: {{ nso-name }}
     image: {{ nso-image }}
+    platform: linux/amd64
     volumes:
       - type: bind
         source: ./packages/
@@ -31,6 +32,7 @@ services:
   {{ cxta-name }}:
     container_name: {{ cxta-name }}
     image: {{ cxta-base }}
+    platform: linux/amd64
     stdin_open: true
     tty: true
     command: bash
