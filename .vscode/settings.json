@@ -1,0 +1,30 @@
+{
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.mypyEnabled": true,
+    "python.linting.lintOnSave": true,
+    "python.formatting.provider": "black",
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "explicit"
+    },
+    "python.analysis.typeCheckingMode": "basic",
+    "autoDocstring.docstringFormat": "google",
+    "autoDocstring.startOnNewLine": false,
+    "files.watcherExclude": {
+        "**/.git/objects/**": true,
+        "**/.git/subtree-cache/**": true,
+        "**/node_modules/*/**": true,
+        "**/.hg/store/**": true
+    },
+    "github.copilot.enable": {
+        "*": true,
+        "python": true
+    },
+    "python.analysis.extraPaths": [
+        "${workspaceFolder}/ncs-pyapi"
+    ],
+    "python.autoComplete.extraPaths": [
+        "${workspaceFolder}/ncs-pyapi"
+    ]
+}

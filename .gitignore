@@ -9,3 +9,20 @@ ncs/ncs.crypto_keys
 
 # Ignoring secrets files
 artifact_server_token.txt
+
+# Ignoring virtual environment .venv
+.venv/
+
+#Ignoring cache and build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+build/
+dist/
+.mypy_cache/
+*load-dir/
+
+# Ignoring imported NSO Python libraries
+ncs-pyapi/
