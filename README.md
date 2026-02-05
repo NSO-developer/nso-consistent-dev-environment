@@ -16,7 +16,7 @@ A series of tools and recommendations for building standardized, container-based
 <code>aka. Helping you, fellow NSO developer, to get started coding faster</code><br />
 </div></br>
 
-> ⚠️ **This version is intended for Mac M-series processor computers**. The official NSO docker image still requires emulation for running. Refer to the **main branch** of this repository for the native version.
+> ⚠️ **If your host is a M-series processor Macbook** - switch to [this repository branch](). The NSO containers do not support natively this processor family, hence it is required to build the image with support for linux/amd64. Otherwise, the container might randomly crash upon boot.
 
 ## ✨ Overview
 

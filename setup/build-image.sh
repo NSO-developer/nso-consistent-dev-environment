@@ -34,7 +34,6 @@ set -x
 # Docker build with the secret mounted. The resulting image will have the name provided in the config.yaml file
 # Force linux/amd64 platform for M1 Mac compatibility (NSO native libraries are x86_64 only)
 DOCKER_BUILDKIT=1 docker build \
---platform linux/amd64 \
 --secret id=artifact_server_token,src=$SECRET_FILE \
 -t $nso_image .
 
