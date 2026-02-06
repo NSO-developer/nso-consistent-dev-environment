@@ -107,8 +107,11 @@ dev-nso-libs:
 		echo "--- ℹ️  Removing existing NSO libraries at $(NSO_PYAPI_LOCAL) ---"; \
 		rm -rf $(NSO_PYAPI_LOCAL); \
 	fi
-	@echo "--- 📦 Copying NSO Python API from container ---"
-	docker cp $(NSO_CONTAINER):$(NSO_PYAPI_SRC) $(NSO_PYAPI_LOCAL)
+	@echo "--- 📦 Copying NSO Python API from container (using tar to handle symlinks) ---"
+	@mkdir -p $(NSO_PYAPI_LOCAL)
+	docker exec $(NSO_CONTAINER) tar -C $(NSO_PYAPI_SRC) -cf - . | tar -C $(NSO_PYAPI_LOCAL) -xf - --exclude='*.lua'
+	@echo "--- 🔧 Cleaning up broken symlinks (if any) ---"
+	@find $(NSO_PYAPI_LOCAL) -type l ! -exec test -e {} \; -delete 2>/dev/null || true
 	@echo "--- ✅ NSO Python libraries extracted to $(NSO_PYAPI_LOCAL) ---"
 
 # Target to setup the complete development environment
@@ -129,8 +132,14 @@ dev-install: dev-venv
 	$(VENV_PIP) install black isort mypy pylint
 	@if [ -d "$(NSO_PYAPI_LOCAL)" ]; then \
 		echo "--- 📚 Configuring NSO Python libraries ---"; \
-		echo "$(shell pwd)/$(NSO_PYAPI_LOCAL)" > $(VENV_DIR)/lib/python*/site-packages/ncs-pyapi.pth; \
-		echo "--- ✅ NSO Python libraries configured in virtual environment ---"; \
+		SITE_PACKAGES=$$(find $(VENV_DIR)/lib -type d -name "site-packages" | head -n 1); \
+		if [ -n "$$SITE_PACKAGES" ]; then \
+			echo "$(shell pwd)/$(NSO_PYAPI_LOCAL)" > "$$SITE_PACKAGES/ncs-pyapi.pth"; \
+			echo "--- ✅ NSO Python libraries configured in virtual environment ---"; \
+		else \
+			echo "--- ❌ ERROR: Could not find site-packages directory ---"; \
+			exit 1; \
+		fi; \
 	else \
 		echo "--- ⚠️  NSO libraries not found at $(NSO_PYAPI_LOCAL) ---"; \
 		echo "--- ℹ️  Run 'make dev-nso-libs' to extract them from the container ---"; \

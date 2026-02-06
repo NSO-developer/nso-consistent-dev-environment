@@ -16,8 +16,6 @@ A series of tools and recommendations for building standardized, container-based
 <code>aka. Helping you, fellow NSO developer, to get started coding faster</code><br />
 </div></br>
 
-> ⚠️ **If your host is a M-series processor Macbook** - switch to [this repository branch](). The NSO containers do not support natively this processor family, hence it is required to build the image with support for linux/amd64. Otherwise, the container might randomly crash upon boot.
-
 ## ✨ Overview
 
 **No more setup headaches.** Join a Network Automation project and start coding services immediately - not after days of wrestling with scattered docs, mismatched libraries, and broken sources.
