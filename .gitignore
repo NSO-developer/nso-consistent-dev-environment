@@ -1,28 +1,10 @@
-# Ignoring rendered files
-docker-compose.yml
-Dockerfile
-
 #Ignoring NSO mounted volume files
-ncs/ssh
-ncs/ssl
-ncs/ncs.crypto_keys
+config/runtime/ssh
+config/runtime/ssl
+config/runtime/ncs.crypto_keys
 
-# Ignoring secrets files
-artifact_server_token.txt
+# Ignoring .env
+.env
 
-# Ignoring virtual environment .venv
-.venv/
-
-#Ignoring cache and build artifacts
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-*.egg-info/
-build/
-dist/
-.mypy_cache/
+# Ignoring NSO packages compiled files
 *load-dir/
-
-# Ignoring imported NSO Python libraries
-ncs-pyapi/
