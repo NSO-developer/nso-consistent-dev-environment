@@ -1,0 +1,38 @@
+{
+  "name": "NetAuto Dev Environment",
+  "dockerComposeFile": [
+    "../docker-compose.yml",
+    "../docker-compose-override.yml"
+  ],
+  "service": "dev-main",
+  "workspaceFolder": "/nso/run/packages",
+  "shutdownAction": "stopCompose",
+  "onCreateCommand": "make -C /workspace-tools wait-ready",
+  "postCreateCommand": "make -C /workspace-tools init",
+  "waitFor": "postCreateCommand",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "tamasfe.even-better-toml",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll.ruff": "always",
+          "source.organizeImports.ruff": "always"
+        },
+        "python.languageServer": "Pylance",
+        "python.analysis.typeCheckingMode": "basic",
+        "python.analysis.autoImportCompletions": true,
+        "python.analysis.diagnosticMode": "workspace",
+        "python.testing.pytestEnabled": true,
+        "python.testing.unittestEnabled": false
+      }
+    }
+  }
+}
