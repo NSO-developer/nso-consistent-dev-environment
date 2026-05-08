@@ -6,6 +6,7 @@
 <div align="center">
   <img src="https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&labelColor=555555&logoColor=white" alt="Docker"/>
   <img src="https://img.shields.io/badge/Bash-Script-blue" alt="Bash"/>
+  <img src="https://img.shields.io/badge/VSCode-only-blue" alt="VSCode-Only"/>
   <img src="https://img.shields.io/badge/Cisco-1BA0D7?style=flat&logo=cisco&labelColor=555555&logoColor=white" alt="Cisco"/>
   <img src="https://img.shields.io/badge/Network-Tools-green" alt="Networking"/>
   <a href="https://developer.cisco.com/codeexchange/github/repo/ponchotitlan/nso-consistent-dev-environment"><img src="https://static.production.devnetcloud.com/codeexchange/assets/images/devnet-published.svg" alt="DevNet"/></a>
@@ -16,14 +17,16 @@ A series of tools and recommendations for building standardized, container-based
 <code>aka. Helping you, fellow NSO developer, to get started coding faster</code><br />
 </div></br>
 
+> 🚨 This project makes use of `devcontainers`, which is a feature available only on **Visual Studio Code**. For a more generic version, check [this branch of the repository](https://github.com/NSO-developer/nso-consistent-dev-environment/tree/scripts-based).
+
 ## ✨ Overview
 
 **No more setup headaches.** Join a Network Automation project and start coding services immediately - not after days of wrestling with scattered docs, mismatched libraries, and broken sources.
 
 This project provides:
-- 🤝 **Consistent environments** - Same NSO versions, NEDs, and packages for the entire team
-- 🚀 **Build once, use many** - Download artifacts once, spin up unlimited containers
-- 🚢 **Based on official NSO** - Extends the official container image without modifying it
+- 🤝 **Consistent environments**: Same NSO versions, NEDs, and packages for the entire team
+- 🚀 **Build once, use many**: Download artifacts once, spin up unlimited containers
+- 🚢 **Based on official NSO**: Extends the official container image without modifying it
 
 ![nso-consistent-dev-env-arch](doc-images/nso-consistent-dev-env-arch.png)
 
@@ -31,49 +34,45 @@ This project provides:
 
 | File/Directory   | Purpose |
 |------------------|---------|
-| `config.yaml` | Define NSO version, NEDs, packages, and netsim devices |
-| `docker-compose.j2` | NSO and CXTA service definitions template |
-| `Dockerfile.j2` | Instructions template for custom NSO image building |
+| `.devcontainer/devcontainer.json` | The core of our dev env. Here we specify how to spin it up and what to deploy |
+| `Dockerfile` | For building our custom NSO development image |
+| `requirements.txt` | Python dependencies to install in our custom NSO development image |
+| `artifacts.yaml` | NEDs and other binaries to deploy in our custom NSO development image |
+| `docker-compose.yml` | Main container orchestration for the NSO service. To be used by devcontainer.json |
+| `docker-compose-override.yml` | Mounting of Makefile and scripts for housekeeping actions when spinning up a new container. To be used by devcontainer.json |
+| `bootstrap/` | Pre-configurations for our NSO environment |
+| `config/runtime/` | ncs.conf for our NSO environment. This one enables RESTCONF and specifies multiple package locations |
+| `source/packages/` | Source tree for custom NSO services (`-cfs`/`-rfs`) |
 | `Makefile` | Simple commands to build and manage your environment |
-| `requirements.txt` | Python libraries to install in the NSO container |
-| `ncs/ncs.conf`* | Custom NSO configuration (auto-mounted to `/nso/etc`) |
-| `packages/` | Your custom services (version-controlled, auto-mounted to `/nso/run/packages`) |
-| `preconfigs/` | XML pre-configurations for NSO (auto-loaded to `/tmp/nso`) |
-| `setup/` | Bash scripts for template rendering and image building |
-| `.vscode/` | VSCode settings and tasks for development |
+| `scripts/` | Automation bash scripts for build, install, compile, reload, and netsims creation |
+| `nso-lab-topology.yaml` | Lab topology definition used for NSO environment setup |
 | `.github/copilot-instructions.md` | GitHub Copilot configuration for NSO coding standards |
 
-*The `ncs.conf` separates artifacts (`/opt/ncs/packages`) from your services (`/nso/run/packages`) for a clean development experience.
+*The runtime config in `config/runtime/ncs.conf` separates NEDs and artifacts (`/opt/ncs/packages`) from your services (`/nso/run/packages`) for a clean development experience.
 
 ---
 
-# 🚀 Part 1: NSO Environment Setup
+## ✅ Prerequisites
 
-Set up your containerized NSO instance with all required NEDs and packages.
-
-## Prerequisites
-
-- [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/install/)
+- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
 - [Make](https://www.gnu.org/software/make/)
-- **Linux-based environment** (this project doesn't support Windows)
+- Linux-based environment (or Linux-compatible container runtime)
 
-## Quick Start
-
-### 1. Clone Repository
+With your local environment ready, clone and enter the repo
 
 ```bash
 git clone https://github.com/ponchotitlan/nso-consistent-dev-environment.git
 cd nso-consistent-dev-environment
 ```
 
-### 2. Get NSO Docker Image
+## 🏗️ Building and pushing your development NSO Docker image
 
-> 💡 Skip this if you already have a commercial NSO image.
+This repository incorporates tools that allow you to create your own NSO image based on an official foundations one.
 
-Download the **NSO Production Docker Image for Free Trial** from [Cisco Software Central](https://software.cisco.com/download/home/286331591/type/286283941/release):
+First of all, you need your NSO base image deployed locally. If needed, download and load an official NSO image first. In this case, we will use the free trial available at [software.cisco.com](software.cisco.com):
 
 ```bash
-# Unpack the signed file
+# Unpack the downloaded signed file
 sh nso-6.5-freetrial.container-image-prod.linux.x86_64.signed.bin
 
 # Load into Docker
@@ -83,149 +82,148 @@ docker load < nso-6.5.container-image-prod.linux.x86_64.tar.gz
 docker images | grep cisco-nso-prod
 ```
 
-### 3. Configure Your Environment
+Afterwards, you need to fill out the following variables in your `.env` file:
 
-Edit `config.yaml` to specify:
+```bash
+# NSO images:
+# - NSO_BASE: Base NSO image used as the starting point for builds.
+# - NSO_IMAGE: Final image name:tag used for local build/run.
+NSO_BASE=ghcr.io/ponchotitlan/cisco-nso-prod:6.6
+NSO_IMAGE=ghcr.io/ponchotitlan/nso-dev:6.6.1
+
+# Container registry credentials:
+# - DOCKER_REGISTRY: Registry URL used to push/pull images.
+# - DOCKER_REGISTRY_USER: Registry username.
+# - DOCKER_REGISTRY_TOKEN: Registry access token/password.
+DOCKER_REGISTRY=your_docker_registry_url_here
+DOCKER_REGISTRY_USER=your_docker_registry_username_here
+DOCKER_REGISTRY_TOKEN=your_docker_registry_token_here
+```
+
+> For the purpose of this demo, we are using `ghcr.io` as our Docker Registry
+
+You also need to provide your artifacts in the file [artifacts.yaml](./artifacts.yaml). These can be either NEDs or other binaries:
 
 ```yaml
-# NSO base image (from docker images)
-nso-base: cisco-nso-prod:6.5
-nso-image: my-nso-custom-dev
-nso-name: my-nso-dev
-
-# CXTA (optional test automation)
-cxta-base: dockerhub.cisco.com/cxta-docker/cxta:latest
-cxta-name: my-cxta-dev
-
-# NEDs and packages to download
-downloads:
-  - https://example.com/path/to/resource-manager.tar.gz
-  - https://example.com/path/to/cisco-nx-ned.tar.gz
-  - https://example.com/path/to/cisco-iosxr-ned.tar.gz
-
-# Packages that don't need compilation
-skip-compilation:
-  - resource-manager
-  - cisco-iosxr-cli-7.69
-
-# Netsim devices to create
-netsims:
-  cisco-iosxr-cli-7.69:
-    - asr9k-xr-7601
-    - ncs5k-xr-5702
-  cisco-nx-cli-5.27:
-    - nexus-9000-01
+urls:
+  - https://github.com/ponchotitlan/dummy_artefact_repository/releases/download/iosxr6.6/ncs-6.6-cisco-iosxr-7.74.4.tar.gz
+  - https://github.com/ponchotitlan/dummy_artefact_repository/releases/download/ios6.6/ncs-6.6-cisco-ios-6.110.3.tar.gz
+  - https://github.com/ponchotitlan/dummy_artefact_repository/releases/download/asa6.6/ncs-6.6-cisco-asa-6.18.29.tar.gz
 ```
 
-### 4. Build and Start NSO
+Furthermore, you need to provide the Python libraries that you will ned in the [requirements.txt](./requirements.txt) file:
 
-**One command does everything:**
+```text
+argcomplete==3.5.3
+Jinja2==3.1.5
+MarkupSafe==3.0.2
+pyaml==25.1.0
+PyYAML==6.0.2
+tomlkit==0.13.2
+xmltodict==0.14.2
+yq==3.4.3
+robotframework==7.2.2
+RESTinstance==1.3.0
+robotframework-jsonlibrary==0.5
+```
+
+> In our case, we are providing the libraries needed to support `Robot Framework` inside of our container.
+
+Finally, issue the following command in the root location of this repository:
 
 ```bash
-make
+make build-push 
 ```
 
-This single command:
-1. ✨ Renders configuration templates
-2. 📤 Sets up local registry (if needed)
-3. 🏗️ Builds custom NSO image with your artifacts
-4. 🚀 Starts NSO and CXTA containers
-5. 🛠️ Compiles your packages
-6. 🔀 Reloads NSO services
-7. 🛸 Creates and onboards netsim devices
+This will build your custom NSO image using the [Dockerfile](./Dockerfile) in this repository, to then push the image using the information provided in the variables `DOCKER_REGISTRY`, `DOCKER_REGISTRY_USER` and `DOCKER_REGISTRY_TOKEN`.
 
-**Done!** Your NSO environment is ready.
+### 🐳 About the `Dockerfile`
 
-### 5. Verify Installation
+This Dockerfile does the following:
 
-```bash
-# Check containers
-docker ps
-
-# Check packages
-docker exec my-nso-dev /bin/bash -c "echo 'show packages package * oper-status | tab' | ncs_cli -Cu admin"
-
-# Check devices
-docker exec my-nso-dev /bin/bash -c "echo 'show devices list' | ncs_cli -Cu admin"
-```
-
-## Individual Commands
-
-If you prefer step-by-step control:
-
-| Command | What It Does |
-|---------|--------------|
-| `make render` | Generate Dockerfile and docker-compose.yml |
-| `make register` | Create local registry (if NSO image isn't hosted) |
-| `make build` | Build custom NSO image with artifacts |
-| `make run` | Start containers with health checks |
-| `make compile` | Compile your service packages |
-| `make reload` | Reload NSO packages |
-| `make netsims` | Create and onboard netsim devices |
-| `make down` | Stop all containers |
-
-## Access Your NSO
-
-**VSCode Users:** Use the built-in task `Terminal > Run Task > Open NSO Container`
-
-**Command Line:**
-```bash
-docker exec -it my-nso-dev /bin/bash
-```
-
-**NSO CLI:**
-```bash
-docker exec -it my-nso-dev ncs_cli -Cu admin
-```
-
-**WebUI:** http://localhost:8080
+1. Pull the base image specified in `NSO_BASE`.
+2. Install the Python libraries mentioned in the `requirements.txt` file using `pip`.
+3. Download the artifacts mentioned in the URLs of the file `artifacts.yaml`.
+4. Extract the artifacts in the folder `opt/ncs/packages` of the NSO container. This folder is enabled for NSO packages as per the `ncs.conf` file in this repository
+5. Delete all these support files once everything is set and done
 
 ---
 
-# 🎨 Part 2: Development Environment Setup
+## 🚀 Deploying your development environment
 
-Set up VSCode and Python tools for professional NSO service development with AI assistance.
-
-## Why This Setup?
-
-- ✅ **Automated code quality** - Format, lint, and type-check automatically
-- ✅ **AI-assisted coding** - GitHub Copilot configured for NSO best practices
-- ✅ **Consistent style** - Entire team follows the same standards
-- ✅ **Isolated environment** - Python virtual environment avoids conflicts
-
-## Quick Setup
-
-### 1. Install Development Tools
-
-**One command installs everything:**
+To get started, provide the following values in the variables of the `.env` file:
 
 ```bash
-make dev-setup
+# NSO access and exposed ports:
+# - ADMIN_USERNAME: NSO admin login username.
+# - ADMIN_PASSWORD: NSO admin login password.
+# - NSO_HTTP_PORT: Host port mapped to NSO HTTP.
+# - NSO_SSH_PORT: Host port mapped to NSO SSH.
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=admin
+NSO_HTTP_PORT=8080
+NSO_SSH_PORT=2022
 ```
 
-This creates a virtual environment (`.venv`) and installs:
-- `black` - Code formatter
-- `isort` - Import organizer
-- `mypy` - Type checker
-- `pylint` - Code linter
+Also, specify in the file [nso-lab-topology.yaml](./nso-lab-topology.yaml) which netsim devices you will spin inside of your NSO container following this format:
 
-### 2. Install VSCode Extensions
-
-```bash
-code --install-extension ms-python.python
-code --install-extension njpwerner.autodocstring
-code --install-extension GitHub.copilot
+```yaml
+topology:
+  cisco-iosxr-cli:
+    ned_version: "7.74.4"
+    netsims:
+      - asr9k-xr-7601
+      - ncs5k-xr-5702
 ```
 
-Or install manually from VSCode Extensions marketplace.
+> The NED name and version must match any of the artifacts installed in your custom image, as mentioned in the file [artifacts.yaml](./artifacts.yaml).
 
-### 3. Restart VSCode
+Finally, on your VSCode IDE, press `Ctlr + Shift + C`. In the pop-up window, select the option **Dev Containers: Reopen in Container**:
 
-VSCode will automatically use the virtual environment and apply settings from `.vscode/settings.json`.
+![Dev Containers Launch](./doc-images/dev-containers-launch.png)
 
-## Coding Standards (Enforced by Tools)
+This will close your current IDE window and open a new one that launches the NSO container and your development environment. You can see the progress in the terminal console:
 
-Full list available 🔗[in this file](CODING-STANDARDS.md).
+![Logs spinning container](./doc-images/nso-onCreate.png)
+
+Once done, the environment is all yours for usage!
+
+> **This process will happen only once: when your container is first created**. It will only be triggered again if the container is destroyed.
+
+Your VSCode window will open by default in the location `/nso/run/packages` where your services in the repository location `source/packages` are mounted - meaning that whichever changes you do inside of your container, will reflect as diffs in your repository.
+
+![Landing page container](./doc-images/nso-landing.png)
+
+Your VSCode IDE has all the extensions mentioned in the section ` "customizations"` of the `.devcontainer/devcontainer.json` file, including Python linting, dependencies solver, Robot Framework highlighting, among others.
+
+![Python](./doc-images/nso-python.png)
+
+![Robot](./doc-images/nso-robot.png)
+
+Your services and NEDs are properly installed and reloaded:
+
+![show packages list open status tab](./doc-images/nso-packages.png)
+
+Additionally, your netsim devices are fully reachable and synced:
+
+![show devices list](./doc-images/nso-devices.png)
+
+Finally, when you close your VS Code IDE window, your NSO container will inmediately go into pause.
+
+---
+
+## 🤖 Coding Guidance with GitHub Copilot
+
+If you use **GitHub Copilot** for coding assistance, it will have references for coding styles, as stated in the file `.github/copilot-instructions.md`:
+
+Alongside other things, it will enforce the following:
+
+- Suggest properly typed and documented code
+- Add `-cfs` or `-rfs` suffixes to service names
+- Follow Google-style docstrings
+- Use NSO best practices
+
+For example, when generating functions inside your services, it will follow by default these styles:
 
 ### Service Naming
 ✅ `my-vpn-service-cfs` (customer-facing)  
@@ -254,109 +252,77 @@ def create_service(name: str, params: dict) -> None:
     pass
 ```
 
-## Development Workflow
-
-```bash
-# 1. One-time setup (first time only)
-make dev-setup
-
-# 2. Write code with GitHub Copilot assistance
-
-# 3. Run quality checks before committing
-make dev-check
-
-# 4. Fix formatting issues automatically
-make dev-format
-
-# 5. Commit your changes
-git add .
-git commit -m "Add feature"
-```
-
-## Available Commands
-
-| Command | Purpose |
-|---------|---------|
-| `make dev-setup` | **Complete setup** - Virtual env + install all tools |
-| `make dev-check` | Run all checks (format + lint + type-check) |
-| `make dev-format` | Auto-format code with black and isort |
-| `make dev-lint` | Run pylint on Python files |
-| `make dev-type-check` | Run mypy type checking |
-| `make dev-clean` | Remove virtual env and caches |
-
-> 💡 All commands automatically use the virtual environment - no need to activate it manually!
-
-## GitHub Copilot Integration
-
-Copilot is pre-configured via `.github/copilot-instructions.md` to:
-- Suggest properly typed and documented code
-- Add `-cfs` or `-rfs` suffixes to service names
-- Follow Google-style docstrings
-- Use NSO best practices
-
-**Just start typing and Copilot will guide you!**
-
-## Creating New Services
-
-**Always use `ncs-make-package` inside the NSO container:**
-
-```bash
-# Wrong ❌
-touch my-service.py
-
-# Correct ✅
-docker exec -it my-nso-dev /bin/bash
-cd /nso/run/packages
-ncs-make-package --service-skeleton python my-service-cfs
-```
-
-GitHub Copilot will remind you to use this command if you try to create files manually.
-
 ---
 
-## 🔥 Troubleshooting
+## ⚙️ Under the hood
 
-### NSO Environment
+### 🧰 About your `.devcontainer/.devcontainer.json`
 
-**Container won't start or fails health check?**
+This project relies heavily on the file `.devcontainer/.devcontainer.json`, where we specify the behaviour of the NSO dev container and the dev environment when being deployed.
 
-Known issue on Mac M-series chips with NSO v6.5. Solutions:
-```bash
-# Option 1: Retry
-make down
-make run
+In a nutshell, this is what happens:
 
-# Option 2: Check logs
-docker logs -f my-nso-dev
+1. VS Code reads `.devcontainer/devcontainer.json` and starts the environment using `docker-compose.yml` plus `docker-compose-override.yml`.
+2. It opens the `dev-main` service as the main development container and sets `/nso/run/packages` as the working folder inside the container.
+3. When the container is created, it runs `make -C /workspace-tools wait-ready` to wait until the NSO server inside of the container has fully booted.
+4. After that, it runs `make -C /workspace-tools init` to compile your packages, load your preconfigs, create your netsims, and onboard them + sync-from them in NSO.
+5. VS Code waits for that initialization step to finish before marking the dev container as fully ready for use.
+6. Once the container is up, VS Code automatically installs the listed extensions, such as Python, Pylance, Ruff, YAML, and Robot Framework support.
+7. It also applies the editor settings defined in the file, such as format-on-save, Ruff fixes on save, Python analysis defaults, and test configuration.
 
-# Option 3: Use Linux VM/cloud instance (recommended)
-```
+The following table describes in detail the parameters of the `.devcontainer/devcontainer.json` file:
 
-**Container taking too long?**
+| Parameter | Value | Purpose |
+|-----------|-------|---------|
+| `name` | `NetAuto Dev Environment` | Defines the display name of the dev container in VS Code. |
+| `dockerComposeFile` | `../docker-compose.yml`, `../docker-compose-override.yml` | Tells VS Code which Compose files must be used to build the development environment. |
+| `service` | `dev-main` | Selects which Compose service will be used as the main development container. |
+| `workspaceFolder` | `/nso/run/packages` | Defines the folder that VS Code opens by default inside the container. |
+| `shutdownAction` | `stopCompose` | Tells VS Code to stop the Compose environment when the dev container session is closed. |
+| `onCreateCommand` | `make -C /workspace-tools wait-ready` | Runs once when the container is first created, and waits for the NSO server to be ready. |
+| `postCreateCommand` | `make -C /workspace-tools init` | Runs after container creation to initialize the development environment. |
+| `waitFor` | `postCreateCommand` | Tells VS Code to wait for the initialization step to finish before marking the container as ready. |
+| `customizations` | `vscode` extensions and settings | Defines the VS Code-specific developer experience, such as which extensions are installed and which editor settings are applied automatically. |
 
-Large packages slow down initial boot. Monitor progress:
-```bash
-docker logs -f my-nso-dev
-```
 
-### Development Environment
+### 🧩 About your `docker-compose.yml` and `docker-compose-override.yml`
 
-**Quality checks failing?**
-```bash
-make dev-check      # See detailed errors
-make dev-format     # Auto-fix formatting
-```
+This is what's going on with these files:
 
-**VSCode not recognizing settings?**
-1. Restart VSCode after `make dev-setup`
-2. Check Python interpreter is `.venv/bin/python` (bottom-left in VSCode)
-3. Verify `.vscode/settings.json` exists
+1. `docker-compose.yml` defines the main container called `dev-main`, gives it the name `nso-dev`, and tells Docker which image to run using the `NSO_IMAGE` variable from the `.env` file.
+2. That same file mounts the main runtime folders into the container, including your service packages, ncs.conf config, initial configs, and lab topology file. These directories are specified in the `.env` file.
+3. It exposes the NSO HTTP and SSH ports from the container to your host machine using the values defined in your `.env` file.
+4. It also injects the admin credentials and extra startup arguments that NSO needs when the container boots.
+5. The healthcheck in `docker-compose.yml` makes Docker verify that NSO has really started before the environment is considered healthy.
+6. `docker-compose-override.yml` adds extra bind mounts only for development convenience, in this case the local `Makefile` and `scripts/` folder under `/workspace-tools`.
+7. Those extra mounts are what allow the devcontainer commands such as `make -C /workspace-tools wait-ready` and `make -C /workspace-tools init` to run inside the container using the files from your repository.
 
-**Virtual environment issues?**
-```bash
-make dev-clean      # Remove everything
-make dev-setup      # Start fresh
-```
+> In practice, the base compose file runs the NSO container itself, and the override file adds the extra tooling that makes the container usable as a full development environment.
+
+The following table describes the `docker-compose.yml` mounted volumes:
+
+| Host source (variables in the `.env` file) | Container target | Purpose |
+|-------------|------------------|---------|
+| `${HOST_PACKAGES_DIR}` | `/nso/run/packages` | Mounts your NSO service packages into the container so you can develop them live from the repository. |
+| `${HOST_RUNTIME_CONFIG_DIR}` | `/nso/etc` | Mounts the `ncs.conf` and related runtime assets. |
+| `${HOST_BOOTSTRAP_DIR}` | `/tmp/nso` | Mounts the initial NSO configuration files. |
+| `${HOST_TOPOLOGY_FILE}` | `/tmp/nso-lab-topology.yaml` | Mounts the lab topology definition used to create and onboard the netsim devices. |
+
+
+### 🛠️ About your `Makefile` and `scripts/` bash files
+
+The `Makefile` is the main entry point for the workflow, and each target delegates the real work to one bash script under `scripts/`.
+
+| Target | Script | What it does |
+|--------|--------|--------------|
+| `make build` | `scripts/build-image.sh` | Builds your custom NSO Docker image. |
+| `make push` | `scripts/push-image.sh` | Pushes the image to the container registry defined in your `.env` file. |
+| `make build-push` | Composite target | Runs `build` first and then `push`. |
+| `make compile` | `scripts/compile-packages.sh` | Compiles the NSO service packages found in `source/packages`. |
+| `make preconfig-reload` | `scripts/nso-load.sh` | Loads the NSO preconfiguration files found in `bootstrap/init`. |
+| `make topology` | `scripts/load-netsims.sh` | Creates the netsim devices, onboards them into NSO, and issues a sync-from on each. |
+| `make init` | Composite target | Runs `compile`, `preconfig-reload`, and `topology` in sequence. |
+| `make wait-ready` | `scripts/devcontainer-init.sh` | Waits until the NSO server is fully started before the rest of the automation continues. |
 
 ---
 

@@ -1,0 +1,11 @@
+services:
+  dev-main:
+    volumes:
+      - type: bind
+        source: ./Makefile
+        target: /workspace-tools/Makefile
+        read_only: true
+      - type: bind
+        source: ./scripts
+        target: /workspace-tools/scripts
+        read_only: true
