@@ -31,4 +31,6 @@ topology:
 wait-ready:
 	@bash scripts/devcontainer-init.sh
 
+build-push: build push
+
 init: compile preconfig-reload topology
