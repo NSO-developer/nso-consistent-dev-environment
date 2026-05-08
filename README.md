@@ -17,6 +17,8 @@ A series of tools and recommendations for building standardized, container-based
 <code>aka. Helping you, fellow NSO developer, to get started coding faster</code><br />
 </div></br>
 
+> 🚨 This project makes use of `devcontainers`, which is a feature available only on **Visual Studio Code**. For a more generic version, check [this branch of the repository](https://github.com/NSO-developer/nso-consistent-dev-environment/tree/scripts-based).
+
 ## ✨ Overview
 
 **No more setup headaches.** Join a Network Automation project and start coding services immediately - not after days of wrestling with scattered docs, mismatched libraries, and broken sources.
