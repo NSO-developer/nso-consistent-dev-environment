@@ -28,7 +28,7 @@ This project provides:
 - 🚀 **Build once, use many**: Download artifacts once, spin up unlimited containers
 - 🚢 **Based on official NSO**: Extends the official container image without modifying it
 
-![nso-consistent-dev-env-arch](doc-images/nso-consistent-dev-env-arch.png)
+![nso-consistent-dev-env-arch](doc-images/nso-consistent-dev-env-arch_.png)
 
 ## 📁 What's Included
 
