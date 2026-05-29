@@ -2,6 +2,10 @@ services:
   dev-main:
     volumes:
       - type: bind
+        source: ./.github
+        target: /nso/run/packages/.github
+        read_only: true
+      - type: bind
         source: ./Makefile
         target: /workspace-tools/Makefile
         read_only: true

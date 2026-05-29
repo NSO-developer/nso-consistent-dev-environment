@@ -8,3 +8,6 @@ config/runtime/ncs.crypto_keys
 
 # Ignoring NSO packages compiled files
 *load-dir/
+
+# Ignoring MacOS files
+.DS_Store
